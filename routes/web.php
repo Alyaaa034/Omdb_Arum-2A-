@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 
 function setAppLocaleFromSession(): void
 {
@@ -11,31 +12,12 @@ function setAppLocaleFromSession(): void
     }
     app()->setLocale($locale);
 }
+// Routing untuk Auth
+Route::get('/', [AuthController::class, 'index'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/', function () {
-    setAppLocaleFromSession();
-    return view('auth.login');
-});
-
-Route::post('/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
-
-    if ($request->email !== 'arumaliyaan034@gmail.com' || $request->password !== 'aly4326') {
-        return back()->withInput()->with('login_error', 'Email atau password salah.');
-    }
-
-    $request->session()->put('logged_in', true);
-    return redirect('/index');
-});
-
-Route::get('/register', function () {
-    setAppLocaleFromSession
-          ();
-    return view('auth.register');
-});
+Route::get('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register_process'])->name('signup');
 
 Route::get('/index', function () {
     setAppLocaleFromSession();
