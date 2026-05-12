@@ -4,12 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Service\AuthService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
     protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function index()
     {
         return view('auth.login');
@@ -20,42 +28,82 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function __construct(AuthService $authService)
-    {
-        $this->authService = $authService;
-    }
-
-    //kode view untuk login dan register
-     public function register_process(Request $request)
+    public function register_process(Request $request)
     {
        $validated = $request->validate([
-            'name' => ['required'],
-            'email' => ['required', 'email', 'unique:users'],
-            'password' => [ 'required', 
-                            'confirmed', 
-                            Password::min(8)
-                            ->letters()
-                            ->mixedCase()
-                            ->numbers()
-                            ->symbols()
-                            ->uncompromised(),
-                            ]
-        ]);
+            'name'      => ['required'],
+            'email'     => ['required', 'email', 'unique:users'],
+            'password'  => ['required','confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+    ]
+]);
 
         try {
             $response = $this->authService->register($validated);
-            if ($response) {
-                return redirect()->route('login')->with('success', 'Registrasi berhasil');
-            } else {
+            if (!$response) {
                 return redirect()->back()->with('error', 'Registrasi gagal');
             }
+
+            return redirect()->route('login')->with('success', 'Registrasi berhasil');
         } catch (\Throwable $th) {
-            Log::error([
-                'line' => $th->getLine(),
-                'file' => $th->getFile(),
-                'message' => $th->getMessage(),
+            Log::error('Error during registration: ' . $th->getMessage(), [
+                'line'      => $th->getLine(),
+                'file'      => $th->getFile(),
+                'message'   => $th->getMessage()
             ]);
-            return redirect()->back()->with('error', 'Registrasi gagal');
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan');
+        }
+    }
+
+    public function login(Request $request)
+    {
+        $validated = $request->validate([
+            'email'     => ['required', 'email', 'exists:users'],
+            'password'  => ['required']
+        ],[
+            'email.required' => 'Email wajib diisi',
+            'email.email'    => 'Email tidak valid',
+            'email.exists'    => 'Email tidak terdaftar',
+            'password.required' => 'Password wajib diisi'
+        ]);
+
+        try {
+            $response = $this->authService->login($validated);
+
+            if (!$response) {
+                return redirect()->back()->with('error', 'Kredensial tidak valid!');
+            }
+            return Redirect('panel_control/index')->with('success', 'Login berhasil');
+        } catch (\Throwable $th) {
+            Log::error('Error during login: ' . $th->getMessage(), [
+                'line'      => $th->getLine(),
+                'file'      => $th->getFile(),
+                'message'   => $th->getMessage(),
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan');
+        }
+    }
+
+    public function logout()
+    {
+        try {
+           session()->flush();
+            return redirect()->route('login')->with('success', 'Logout berhasil');
+        }catch (\throwable $th){
+            log::error('Error during logout: ' . $th->getMessage(), [
+                'line'      => $th->getLine(),
+                'file'      => $th->getFile(),
+                'message'   => $th->getMessage(),
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan');
         }
     }
 }

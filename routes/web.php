@@ -1,50 +1,35 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PanelControl\DashboardController;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Route;
 
-function setAppLocaleFromSession(): void
-{
-    $locale = session('locale', 'en');
-    if ($locale === 'id') {
-        $locale = 'in';
-    }
-    app()->setLocale($locale);
-}
-// Routing untuk Auth
-Route::get('/', [AuthController::class, 'index'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/register', [AuthController::class, 'register']);
-Route::post('/register', [AuthController::class, 'register_process'])->name('signup');
-
-Route::get('/index', function () {
-    setAppLocaleFromSession();
-    if (! session('logged_in', false)) {
-        return redirect('/');
-    }
-    return view('panel_control.index');
-});
-Route::get('/My', function () {
-    setAppLocaleFromSession();
-    if (! session('logged_in', false)) {
-        return redirect('/');
-    }
-    return view('panel_control.My');
-});
+//swith language
 Route::get('lang/{locale}', function ($locale) {
-    if (in_array($locale, ['en', 'in', 'id'])) {
-        if ($locale === 'id') {
-            $locale = 'in';
-        }
+    if (in_array($locale, ['en', 'id'])) {
         session(['locale' => $locale]);
-        app()->setLocale($locale);
+        App::setLocale($locale);
     }
     return redirect()->back();
-})->name('lang.switch'
-);
-Route::get('/logout', function () {
-    session()->flush();
-    return redirect('/');
+})->name('lang.switch');
+
+
+//ROUTE
+
+Route::get('/', [AuthController::class, 'index'])->name('login');
+Route::get('/register', [AuthController::class, 'register'])->name('register');
+Route::post('/register', [AuthController::class, 'register_process'])->name('signup');
+Route::post('/login', [AuthController::class, 'login'])->name('signin');
+Route::post('/logout', [AuthController::class, 'logout'])->name('signout');
+
+
+Route::get('/Favorites', function () {
+    return view('panel_control.My');
+})->name('favorite');
+
+Route::prefix('panel_control')->middleware('checkLogin')->group(function () {
+    Route::get('index', [DashboardController::class, 'index'])->name('dashboard');
 });
+
