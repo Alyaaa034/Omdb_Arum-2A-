@@ -1,57 +1,53 @@
-@include("panel_control.partials.header")
+@extends('panel_control/partials.master')
 
-      <!-- Main Content -->
-      <div class="main-content" style="min-height: 896px">
+@section('title', __('messages.Dashboard'))
+
+@section('main-content')
+    <div class="main-content">
         <section class="section">
-          <div class="section-header">
-            <h1>{{__('messages.Movies') }}</h1>
-          </div>
-          <div class="section-body">
-            <div class="row mt-4">
-              <div class="col-12">
-                <div class="card">
-                  <div class="card-header">
-                    <h4>{{__('messages.All Movies') }}</h4>
-                  </div>
-                  <div class="card-body">
-                    <div class="float-right">
-                      <div class="search-element">
-                        <div class="input-group-append">
-                          <input type="text" name="q" id="search-input" class="form-control" placeholder="{{__('messages.search for movies') }}">
-                            <div class="input-group-append">
-                              <button class="btn btn-primary" type="submit">
-                                <i class="fas fa-search"></i>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                    <div class="cleartix mb-3">
+            <div class="section-header">
+                <h1>{{ __('messages.Dashboard') }}</h1>
+                <div class="section-header-breadcrumb">
+                    <div class="breadcrumb-item active">
+                        <a href="{{ route('dashboard') }}">{{ __('messages.Dashboard') }}</a>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-striped" id="movie-table">
-                      <thead>
-                        <tr>
-                          <th>{{__('messages.Poster') }}</th>
-                          <th>{{__('messages.Title') }}</th>
-                          <th>{{__('messages.Year') }}</th>
-                          <th>{{__('messages.Type') }}</th>
-                          <th>{{__('messages.Action') }}</th>
-                        </tr>
-                      </thead>
-                      <tbody id="Movie-container">
-                        <tr id="empty-row">
-                          <td colspan="5" class="text-center py-5">
-                            <i class="fas fa-search fa-3x text-muted mb-3 d-block"></i>
-                            <span class="text-muted">{{__('messages.enter keywords to search for movies') }}</span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-              </div>
             </div>
-          </div>
+
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card card-statistic-1">
+                            <div class="card-icon bg-primary">
+                                <i class="fas fa-film"></i>
+                            </div>
+                            <div class="card-wrap">
+                                <div class="card-header">
+                                    <h4>{{ __('messages.Movies') }}</h4>
+                                </div>
+                                <div class="card-body">
+                                    <a href="{{ route('movies') }}">{{ __('messages.Search Movies') }}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card card-statistic-1">
+                            <div class="card-icon bg-danger">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="card-wrap">
+                                <div class="card-header">
+                                    <h4>{{ __('messages.Favorites') }}</h4>
+                                </div>
+                                <div class="card-body">
+                                    <a href="{{ route('favorite') }}">{{ __('messages.My Favorites') }}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
-      </div>
-@include("panel_control.partials.footer")
+    </div>
+@endsection

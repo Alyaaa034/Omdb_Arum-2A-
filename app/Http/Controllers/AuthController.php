@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Service\AuthService;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +30,7 @@ class AuthController extends Controller
 
     public function register_process(Request $request)
     {
-       $validated = $request->validate([
+        $validated = $request->validate([
             'name'      => ['required'],
             'email'     => ['required', 'email', 'unique:users'],
             'password'  => ['required','confirmed',
@@ -40,8 +40,8 @@ class AuthController extends Controller
                     ->numbers()
                     ->symbols()
                     ->uncompromised(),
-    ]
-]);
+            ]
+        ]);
 
         try {
             $response = $this->authService->register($validated);
@@ -69,7 +69,7 @@ class AuthController extends Controller
         ],[
             'email.required' => 'Email wajib diisi',
             'email.email'    => 'Email tidak valid',
-            'email.exists'    => 'Email tidak terdaftar',
+            'email.exists'   => 'Email tidak terdaftar',
             'password.required' => 'Password wajib diisi'
         ]);
 
@@ -79,7 +79,8 @@ class AuthController extends Controller
             if (!$response) {
                 return redirect()->back()->with('error', 'Kredensial tidak valid!');
             }
-            return Redirect('panel_control/index')->with('success', 'Login berhasil');
+            // Perbaikan: redirect ke halaman movies menggunakan route name
+            return redirect()->route('movies')->with('success', 'Login berhasil');
         } catch (\Throwable $th) {
             Log::error('Error during login: ' . $th->getMessage(), [
                 'line'      => $th->getLine(),
@@ -94,10 +95,10 @@ class AuthController extends Controller
     public function logout()
     {
         try {
-           session()->flush();
+            session()->flush();
             return redirect()->route('login')->with('success', 'Logout berhasil');
-        }catch (\throwable $th){
-            log::error('Error during logout: ' . $th->getMessage(), [
+        } catch (\Throwable $th) {
+            Log::error('Error during logout: ' . $th->getMessage(), [
                 'line'      => $th->getLine(),
                 'file'      => $th->getFile(),
                 'message'   => $th->getMessage(),
