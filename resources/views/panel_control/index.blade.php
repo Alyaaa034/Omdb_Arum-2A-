@@ -41,7 +41,7 @@
                                     <h4>{{ __('messages.Favorites') }}</h4>
                                 </div>
                                 <div class="card-body">
-                                    <a href="{{ route('favorite') }}">{{ __('messages.My Favorites') }}</a>
+                                    <a href="{{ route('favorites') }}">{{ __('messages.My Favorites') }}</a>
                                 </div>
                             </div>
                         </div>

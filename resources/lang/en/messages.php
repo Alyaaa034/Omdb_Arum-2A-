@@ -53,4 +53,5 @@ return [
     "Loading more movies..." => "Loading more movies...",
     "All movies loaded." => "All movies loaded.",
     "Favorites" => "Favorites",
+    "Remove" => "Remove",
 ];

@@ -53,4 +53,5 @@ return [
     "Loading more movies..." => "Memuat lebih banyak film...",
     "All movies loaded." => "Semua film dimuat.",
     "Favorites" => "Favorit",
+    "Remove" => "Hapus",
 ];

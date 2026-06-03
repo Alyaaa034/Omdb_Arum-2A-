@@ -19,19 +19,6 @@
     <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/components.css') }}">
-    {{-- <!-- Start GA -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-94034622-3"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-
-        function gtag() {
-            dataLayer.push(arguments);
-        }
-        gtag('js', new Date());
-
-        gtag('config', 'UA-94034622-3');
-    </script>
-    <!-- /END GA --> --}}
 </head>
 
 <body>
@@ -45,10 +32,10 @@
 
             <!-- Main Content -->
             @yield('main-content')
+
             @if (!request()->is('/') && !request()->is('register'))
                 @include('panel_control/partials.footer')
             @endif
-
         </div>
     </div>
 
@@ -59,7 +46,7 @@
     <script src="{{ asset('assets/modules/bootstrap/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/modules/nicescroll/jquery.nicescroll.min.js') }}"></script>
     <script src="{{ asset('assets/modules/moment.min.js') }}"></script>
-    <script src="assets/js/stisla.js"></script>
+    <script src="{{ asset('assets/js/stisla.js') }}"></script>
 
     <!-- JS Libraies -->
     <script src="{{ asset('assets/modules/jquery.sparkline.min.js') }}"></script>
@@ -69,38 +56,40 @@
     <script src="{{ asset('assets/modules/chocolat/dist/js/jquery.chocolat.min.js') }}"></script>
 
     <!-- Page Specific JS File -->
-    <script src="assets/js/page/index.js"></script>
+    <script src="{{ asset('assets/js/page/index.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    @if (@session()->has('success'))
+    @if (session()->has('success'))
         <script>
             Swal.fire({
-                text: "{{ session()->get('success') }}",
+                text: "{{ session('success') }}",
                 icon: "success",
                 toast: true,
                 position: 'top-end',
-                showComfirmButton: false,
+                showConfirmButton: false,
                 timer: 3000
-            })
+            });
         </script>
     @endif
 
-    @if (@session()->has('error'))
+    @if (session()->has('error'))
         <script>
             Swal.fire({
-                text: "{{ session()->get('error') }}",
+                text: "{{ session('error') }}",
                 icon: "error",
                 toast: true,
                 position: 'top-end',
-                showComfirmButton: false,
+                showConfirmButton: false,
                 timer: 3000
-            })
+            });
         </script>
     @endif
+
     @stack('scripts')
+
     <!-- Template JS File -->
-    <script src="assets/js/scripts.js"></script>
-    <script src="assets/js/custom.js"></script>
+    <script src="{{ asset('assets/js/scripts.js') }}"></script>
+    <script src="{{ asset('assets/js/custom.js') }}"></script>
 </body>
 
 </html>

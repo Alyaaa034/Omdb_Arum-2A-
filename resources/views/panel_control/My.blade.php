@@ -79,20 +79,21 @@
                                                                     {{ $movie['type'] }}
                                                                 </div>
                                                             </td>
-                                                            <td class="align-middle action-buttons">
+                                                            <td class="align-middle action-buttons" style="white-space: nowrap;">
                                                                 <a href="{{ route('movies.detail', ['imdbID' => $movie['imdbID']]) }}"
                                                                     class="btn btn-sm btn-info">
                                                                     <i class="fas fa-eye"></i>
                                                                     {{ __('messages.Detail') }}
                                                                 </a>
                                                                 <button type="button"
-                                                                    class="btn btn-sm btn-danger favorite-btn"
+                                                                    class="btn btn-sm btn-outline-danger favorite-btn"
                                                                     data-imdb="{{ $movie['imdbID'] }}"
                                                                     data-title="{{ $movie['title'] }}"
                                                                     data-poster="{{ $movie['poster'] }}"
                                                                     data-year="{{ $movie['year'] }}"
                                                                     data-type="{{ $movie['type'] }}">
-                                                                    <i class="fas fa-heart"></i>
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                    {{ __('messages.Remove') }}
                                                                 </button>
                                                             </td>
                                                         </tr>
