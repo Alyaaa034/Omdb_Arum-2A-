@@ -64,10 +64,6 @@
                                                     <span class="badge badge-primary text-capitalize">{{ $data['Type'] }}</span>
                                                 </td>
                                                 <td class="align-middle action-buttons" style="white-space: nowrap;">
-                                                    <a href="{{ route('movies.detail', ['imdbID' => $data['imdbID']]) }}?q={{ urlencode(request('q')) }}"
-                                                        class="btn btn-sm btn-info">
-                                                        <i class="fas fa-eye"></i> {{ __('messages.Detail') }}
-                                                    </a>
                                                     <button type="button"
                                                         class="btn btn-sm favorite-btn"
                                                         style="background:#fff; color:#dc3545; border:1px solid #dc3545;"
@@ -78,6 +74,10 @@
                                                         data-type="{{ $data['Type'] }}">
                                                         <i class="{{ isset($favorites[$data['imdbID']]) ? 'fas' : 'far' }} fa-heart"></i>
                                                     </button>
+                                                    <a href="{{ route('movies.detail', ['imdbID' => $data['imdbID']]) }}?q={{ urlencode(request('q')) }}"
+                                                        class="btn btn-sm btn-info">
+                                                        <i class="fas fa-eye"></i> {{ __('messages.Detail') }}
+                                                    </a>
                                                 </td>
                                             </tr>
                                         @empty
@@ -121,40 +121,115 @@
     // Data dari server
     let page = 1, isLoading = false, hasMore = true;
     const query = "{{ request('q') }}";
-    const favoritesMap = {!! json_encode(array_keys($favorites ?? [])) !!}.reduce((map, id) => { map[id] = true; return map; }, {});
+    const favoritesStorageKey = 'omdb_favorites';
+    const initialFavorites = @json($favorites ?? []);
+    let favoritesMap = {};
 
-    // Toggle favorite via AJAX
-    function toggleFavorite(btn) {
-        let imdb = btn.data('imdb');
-        let isFav = btn.find('i').hasClass('fas');
-        let url = isFav ? "{{ route('favorite.remove') }}" : "{{ route('favorite.add') }}";
-        let method = isFav ? 'DELETE' : 'POST';
+    function loadFavorites() {
+        try {
+            const storedFavorites = localStorage.getItem(favoritesStorageKey);
 
-        $.ajax({
-            url: url,
-            method: method,
-            data: {
-                _token: '{{ csrf_token() }}',
-                imdbID: imdb,
-                title: btn.data('title'),
-                poster: btn.data('poster'),
-                year: btn.data('year'),
-                type: btn.data('type')
-            },
-            success: function(res) {
-                let icon = btn.find('i');
-                if (res.status === 'added') {
-                    icon.removeClass('far').addClass('fas');
-                    favoritesMap[imdb] = true;
-                } else if (res.status === 'removed') {
-                    icon.removeClass('fas').addClass('far');
-                    delete favoritesMap[imdb];
-                }
-                Swal.fire({ text: res.message, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-            },
-            error: function(xhr) {
-                Swal.fire({ text: xhr.status === 401 ? 'Silakan login dulu' : 'Terjadi kesalahan', icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+            if (storedFavorites !== null) {
+                const parsedFavorites = JSON.parse(storedFavorites);
+                return parsedFavorites && typeof parsedFavorites === 'object' && !Array.isArray(parsedFavorites)
+                    ? parsedFavorites
+                    : {};
             }
+
+            if (initialFavorites && Object.keys(initialFavorites).length) {
+                localStorage.setItem(favoritesStorageKey, JSON.stringify(initialFavorites));
+                return initialFavorites;
+            }
+        } catch (error) {
+            console.error('Failed to load favorites', error);
+        }
+
+        return {};
+    }
+
+    function saveFavorites(favorites) {
+        localStorage.setItem(favoritesStorageKey, JSON.stringify(favorites));
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function(character) {
+            return ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character];
+        });
+    }
+
+    function syncFavoriteButton(btn, isFavorite) {
+        const icon = btn.find('i');
+
+        if (isFavorite) {
+            icon.removeClass('far').addClass('fas');
+            btn.css({
+                'background-color': '#dc3545',
+                'color': '#fff',
+                'border-color': '#dc3545'
+            });
+            return;
+        }
+
+        icon.removeClass('fas').addClass('far');
+        btn.css({
+            'background-color': '#fff',
+            'color': '#dc3545',
+            'border-color': '#dc3545'
+        });
+    }
+
+    function syncAllFavoriteButtons() {
+        $('.favorite-btn').each(function() {
+            const btn = $(this);
+            const imdb = btn.data('imdb');
+            syncFavoriteButton(btn, !!favoritesMap[imdb]);
+        });
+    }
+
+    // Toggle favorite via localStorage
+    function toggleFavorite(btn) {
+        const imdb = btn.data('imdb');
+        const isFavorite = !!favoritesMap[imdb];
+
+        if (isFavorite) {
+            delete favoritesMap[imdb];
+            saveFavorites(favoritesMap);
+            syncFavoriteButton(btn, false);
+
+            Swal.fire({
+                text: '{{ __('messages.favorite_removed') }}',
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            });
+            return;
+        }
+
+        favoritesMap[imdb] = {
+            imdbID: imdb,
+            title: btn.data('title'),
+            poster: btn.data('poster'),
+            year: btn.data('year'),
+            type: btn.data('type')
+        };
+        saveFavorites(favoritesMap);
+        syncFavoriteButton(btn, true);
+
+        Swal.fire({
+            text: '{{ __('messages.favorite_added') }}',
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
         });
     }
 
@@ -175,16 +250,16 @@
                         let isFav = favoritesMap[m.imdbID];
                         let row = `
                             <tr data-imdb="${m.imdbID}">
-                                <td class="align-middle"><img src="${m.Poster}" width="50" height="70" style="object-fit:cover"></td>
-                                <td class="align-middle">${m.Title}</td>
-                                <td class="align-middle">${m.Year}</td>
-                                <td class="align-middle"><span class="badge badge-primary text-capitalize">${m.Type}</span></td>
+                                <td class="align-middle"><img src="${escapeHtml(m.Poster)}" alt="${escapeHtml(m.Title)}" width="50" height="70" style="object-fit:cover"></td>
+                                <td class="align-middle">${escapeHtml(m.Title)}</td>
+                                <td class="align-middle">${escapeHtml(m.Year)}</td>
+                                <td class="align-middle"><span class="badge badge-primary text-capitalize">${escapeHtml(m.Type)}</span></td>
                                 <td class="align-middle action-buttons" style="white-space:nowrap">
-                                    <a href="/movies/${m.imdbID}?q=${encodeURIComponent(query)}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Detail</a>
                                     <button type="button" class="btn btn-sm favorite-btn" style="background:#fff; color:#dc3545; border:1px solid #dc3545;"
-                                        data-imdb="${m.imdbID}" data-title="${m.Title}" data-poster="${m.Poster}" data-year="${m.Year}" data-type="${m.Type}">
+                                        data-imdb="${escapeHtml(m.imdbID)}" data-title="${escapeHtml(m.Title)}" data-poster="${escapeHtml(m.Poster)}" data-year="${escapeHtml(m.Year)}" data-type="${escapeHtml(m.Type)}">
                                         <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
                                     </button>
+                                    <a href="/movies/${encodeURIComponent(m.imdbID)}?q=${encodeURIComponent(query)}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Detail</a>
                                 </td>
                             </tr>`;
                         $('#movie-container').append(row);
@@ -203,6 +278,9 @@
 
     // Event binding awal
     $(document).ready(function() {
+        favoritesMap = loadFavorites();
+        syncAllFavoriteButtons();
+
         $('.favorite-btn').on('click', function() { toggleFavorite($(this)); });
         $(window).on('scroll', function() {
             if ($(window).scrollTop() + $(window).height() >= $(document).height() - 200) loadMore();

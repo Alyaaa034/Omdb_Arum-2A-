@@ -6,7 +6,6 @@ use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -46,10 +45,10 @@ class AuthController extends Controller
         try {
             $response = $this->authService->register($validated);
             if (!$response) {
-                return redirect()->back()->with('error', 'Registrasi gagal');
+                return redirect()->back()->with('error', __('messages.register_failed'));
             }
 
-            return redirect()->route('login')->with('success', 'Registrasi berhasil');
+            return redirect()->route('login')->with('success', __('messages.register_success'));
         } catch (\Throwable $th) {
             Log::error('Error during registration: ' . $th->getMessage(), [
                 'line'      => $th->getLine(),
@@ -57,7 +56,7 @@ class AuthController extends Controller
                 'message'   => $th->getMessage()
             ]);
 
-            return redirect()->back()->with('error', 'Terjadi kesalahan');
+            return redirect()->back()->with('error', __('messages.generic_error'));
         }
     }
 
@@ -67,20 +66,20 @@ class AuthController extends Controller
             'email'     => ['required', 'email', 'exists:users'],
             'password'  => ['required']
         ],[
-            'email.required' => 'Email wajib diisi',
-            'email.email'    => 'Email tidak valid',
-            'email.exists'   => 'Email tidak terdaftar',
-            'password.required' => 'Password wajib diisi'
+            'email.required' => __('messages.email_required'),
+            'email.email'    => __('messages.email_invalid'),
+            'email.exists'   => __('messages.email_not_registered'),
+            'password.required' => __('messages.password_required')
         ]);
 
         try {
             $response = $this->authService->login($validated);
 
             if (!$response) {
-                return redirect()->back()->with('error', 'Kredensial tidak valid!');
+                return redirect()->back()->with('error', __('messages.invalid_credentials'));
             }
             // Perbaikan: redirect ke halaman movies menggunakan route name
-            return redirect()->route('movies')->with('success', 'Login berhasil');
+            return redirect()->route('movies')->with('success', __('messages.login_success'));
         } catch (\Throwable $th) {
             Log::error('Error during login: ' . $th->getMessage(), [
                 'line'      => $th->getLine(),
@@ -88,7 +87,7 @@ class AuthController extends Controller
                 'message'   => $th->getMessage(),
             ]);
 
-            return redirect()->back()->with('error', 'Terjadi kesalahan');
+            return redirect()->back()->with('error', __('messages.generic_error'));
         }
     }
 
@@ -96,7 +95,7 @@ class AuthController extends Controller
     {
         try {
             session()->flush();
-            return redirect()->route('login')->with('success', 'Logout berhasil');
+            return redirect()->route('login')->with('success', __('messages.logout_success'));
         } catch (\Throwable $th) {
             Log::error('Error during logout: ' . $th->getMessage(), [
                 'line'      => $th->getLine(),
@@ -104,7 +103,7 @@ class AuthController extends Controller
                 'message'   => $th->getMessage(),
             ]);
 
-            return redirect()->back()->with('error', 'Terjadi kesalahan');
+            return redirect()->back()->with('error', __('messages.generic_error'));
         }
     }
 }

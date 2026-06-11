@@ -51,7 +51,7 @@ class MovieController extends Controller
                 'message' => $th->getMessage()
             ]);
 
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat film.');
+            return redirect()->back()->with('error', __('messages.load_movies_error'));
         }
     }
 
@@ -71,7 +71,7 @@ class MovieController extends Controller
                 'message' => $th->getMessage()
             ]);
 
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat detail film.');
+            return redirect()->back()->with('error', __('messages.load_movie_detail_error'));
         }
     }
 
@@ -90,7 +90,7 @@ class MovieController extends Controller
             $favorites[$request->imdbID] = $movie;
             Session::put('favorites', $favorites);
 
-            return response()->json(['status' => 'added', 'message' => 'Film ditambahkan ke favorit']);
+            return response()->json(['status' => 'added', 'message' => __('messages.favorite_added')]);
         } catch (\Throwable $th) {
             Log::error("Failed to add favorite", [
                 'line' => $th->getLine(),
@@ -109,7 +109,7 @@ class MovieController extends Controller
             unset($favorites[$request->imdbID]);
             Session::put('favorites', $favorites);
 
-            return response()->json(['status' => 'removed', 'message' => 'Film dihapus dari favorit']);
+            return response()->json(['status' => 'removed', 'message' => __('messages.favorite_removed')]);
         } catch (\Throwable $th) {
             Log::error("Failed to remove favorite", [
                 'line' => $th->getLine(),

@@ -55,13 +55,17 @@
                                                 {{ $movie['Genre'] }}
                                             </p>
                                         </div>
-                                        {{-- Tombol favorite (jika diperlukan nanti) --}}
-                                        {{-- <button type="button" class="btn btn-outline-danger favorite-btn"
+                                        <button type="button"
+                                            class="btn btn-sm favorite-btn"
+                                            style="background:#fff; color:#dc3545; border:1px solid #dc3545;"
                                             data-imdb="{{ $movie['imdbID'] }}"
-                                            id="favorite-btn-{{ $movie['imdbID'] }}">
+                                            data-title="{{ $movie['Title'] }}"
+                                            data-poster="{{ $movie['Poster'] }}"
+                                            data-year="{{ $movie['Year'] }}"
+                                            data-type="{{ $movie['Genre'] }}">
                                             <i class="far fa-heart"></i>
-                                            <span>{{ __('messages.Add to Favorites') }}</span>
-                                        </button> --}}
+                                            <span class="ml-1">{{ __('messages.Add to Favorites') }}</span>
+                                        </button>
                                     </div>
 
                                     {{-- Ratings --}}
@@ -133,3 +137,60 @@
         </section>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleFavoriteDetail(btn) {
+        let imdbID = btn.data('imdb');
+        let title = btn.data('title');
+        let poster = btn.data('poster');
+        let year = btn.data('year');
+        let type = btn.data('type');
+
+        $.ajax({
+            url: "{{ route('favorite.add') }}",
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                imdbID: imdbID,
+                title: title,
+                poster: poster,
+                year: year,
+                type: type
+            },
+            success: function(response) {
+                let icon = btn.find('i');
+                icon.removeClass('far').addClass('fas');
+                btn.css('background-color', '#dc3545');
+                btn.css('color', '#fff');
+                btn.css('border-color', '#dc3545');
+
+                Swal.fire({
+                    text: response.message || '{{ __('messages.favorite_added') }}',
+                    icon: 'success',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    text: xhr.status === 401 ? '{{ __('messages.login_first') }}' : '{{ __('messages.generic_error') }}',
+                    icon: 'error',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        $('.favorite-btn').on('click', function() {
+            toggleFavoriteDetail($(this));
+        });
+    });
+</script>
+@endpush

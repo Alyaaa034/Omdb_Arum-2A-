@@ -30,78 +30,6 @@
 
                             <div class="card-body">
                                 <div id="favorites-content">
-                                    @php
-                                        $favorites = session('favorites', []);
-                                    @endphp
-
-                                    @if (empty($favorites))
-                                        <div class="text-center py-5">
-                                            <i class="fas fa-heart-broken fa-3x text-muted mb-3 d-block"></i>
-
-                                            <h5 class="text-muted">
-                                                {{ __('messages.No favorites yet') }}
-                                            </h5>
-
-                                            <p class="text-muted">
-                                                {{ __('messages.Start adding movies to your favorites list!') }}
-                                            </p>
-
-                                            <a href="{{ route('movies') }}" class="btn btn-primary mt-2">
-                                                <i class="fas fa-search"></i>
-                                                {{ __('messages.find your favorite movie') }}
-                                            </a>
-                                        </div>
-                                    @else
-                                        <div class="table-responsive">
-                                            <table class="table table-striped">
-                                                <thead>
-                                                    <tr>
-                                                        <th>{{ __('messages.Poster') }}</th>
-                                                        <th>{{ __('messages.Title') }}</th>
-                                                        <th>{{ __('messages.Year') }}</th>
-                                                        <th>{{ __('messages.Type') }}</th>
-                                                        <th>{{ __('messages.Action') }}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="favorites-table">
-                                                    @foreach ($favorites as $movie)
-                                                        <tr data-imdb="{{ $movie['imdbID'] }}">
-                                                            <td class="align-middle">
-                                                                <img src="{{ $movie['poster'] }}"
-                                                                    alt="{{ $movie['title'] }}"
-                                                                    class="rounded" width="50" height="70"
-                                                                    style="object-fit: cover">
-                                                            </td>
-                                                            <td class="align-middle">{{ $movie['title'] }}</td>
-                                                            <td class="align-middle">{{ $movie['year'] }}</td>
-                                                            <td class="align-middle">
-                                                                <div class="badge badge-primary text-capitalize">
-                                                                    {{ $movie['type'] }}
-                                                                </div>
-                                                            </td>
-                                                            <td class="align-middle action-buttons" style="white-space: nowrap;">
-                                                                <a href="{{ route('movies.detail', ['imdbID' => $movie['imdbID']]) }}"
-                                                                    class="btn btn-sm btn-info">
-                                                                    <i class="fas fa-eye"></i>
-                                                                    {{ __('messages.Detail') }}
-                                                                </a>
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-outline-danger favorite-btn"
-                                                                    data-imdb="{{ $movie['imdbID'] }}"
-                                                                    data-title="{{ $movie['title'] }}"
-                                                                    data-poster="{{ $movie['poster'] }}"
-                                                                    data-year="{{ $movie['year'] }}"
-                                                                    data-type="{{ $movie['type'] }}">
-                                                                    <i class="fas fa-trash-alt"></i>
-                                                                    {{ __('messages.Remove') }}
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -114,54 +42,136 @@
 
 @push('scripts')
     <script>
-        function removeFavorite(btn) {
-            let imdbID = btn.data('imdb');
-            let icon = btn.find('i');
+        const favoritesStorageKey = 'omdb_favorites';
+        const initialFavorites = @json(session('favorites', []));
 
-            $.ajax({
-                url: "{{ route('favorite.remove') }}",
-                method: 'DELETE',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    imdbID: imdbID
-                },
-                success: function(response) {
-                    if (response.status === 'removed') {
-                        // Hapus baris dari tabel
-                        $('tr[data-imdb="' + imdbID + '"]').fadeOut(function() {
-                            $(this).remove();
+        function loadFavorites() {
+            try {
+                const storedFavorites = localStorage.getItem(favoritesStorageKey);
 
-                            // Jika tidak ada favorit lagi, tampilkan pesan kosong
-                            if ($('#favorites-table tbody tr').length === 0) {
-                                location.reload();
-                            }
-                        });
-                        Swal.fire({
-                            text: 'Film dihapus dari favorit',
-                            icon: 'info',
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            timer: 2000
-                        });
-                    }
-                },
-                error: function(xhr) {
-                    Swal.fire({
-                        text: 'Terjadi kesalahan, coba lagi',
-                        icon: 'error',
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 2000
-                    });
+                if (storedFavorites !== null) {
+                    const parsedFavorites = JSON.parse(storedFavorites);
+                    return parsedFavorites && typeof parsedFavorites === 'object' && !Array.isArray(parsedFavorites)
+                        ? parsedFavorites
+                        : {};
                 }
+
+                if (initialFavorites && Object.keys(initialFavorites).length) {
+                    localStorage.setItem(favoritesStorageKey, JSON.stringify(initialFavorites));
+                    return initialFavorites;
+                }
+            } catch (error) {
+                console.error('Failed to load favorites', error);
+            }
+
+            return {};
+        }
+
+        function saveFavorites(favorites) {
+            localStorage.setItem(favoritesStorageKey, JSON.stringify(favorites));
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, function(character) {
+                return ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                })[character];
+            });
+        }
+
+        function renderEmptyState(container) {
+            container.html(`
+                <div class="text-center py-5">
+                    <i class="fas fa-heart-broken fa-3x text-muted mb-3 d-block"></i>
+                    <h5 class="text-muted">{{ __('messages.No favorites yet') }}</h5>
+                    <p class="text-muted">{{ __('messages.Start adding movies to your favorites list!') }}</p>
+                    <a href="{{ route('movies') }}" class="btn btn-primary mt-2">
+                        <i class="fas fa-search"></i>
+                        {{ __('messages.find your favorite movie') }}
+                    </a>
+                </div>
+            `);
+        }
+
+        function renderFavorites() {
+            const container = $('#favorites-content');
+            const favorites = loadFavorites();
+            const movies = Object.values(favorites);
+
+            if (!movies.length) {
+                renderEmptyState(container);
+                return;
+            }
+
+            const rows = movies.map((movie) => `
+                <tr data-imdb="${movie.imdbID}">
+                    <td class="align-middle">
+                        <img src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" class="rounded" width="50" height="70" style="object-fit: cover">
+                    </td>
+                    <td class="align-middle">${escapeHtml(movie.title)}</td>
+                    <td class="align-middle">${escapeHtml(movie.year)}</td>
+                    <td class="align-middle">
+                        <div class="badge badge-primary text-capitalize">${escapeHtml(movie.type)}</div>
+                    </td>
+                    <td class="align-middle action-buttons" style="white-space: nowrap;">
+                        <a href="/movies/${encodeURIComponent(movie.imdbID)}" class="btn btn-sm btn-info">
+                            <i class="fas fa-eye"></i>
+                            {{ __('messages.Detail') }}
+                        </a>
+                        <button type="button"
+                            class="btn btn-sm favorite-btn"
+                            style="background-color: #dc3545; color: #fff; border: 1px solid #dc3545;"
+                            data-imdb="${escapeHtml(movie.imdbID)}">
+                            <i class="fas fa-trash-alt"></i>
+                            <span class="ml-1">{{ __('messages.Remove') }}</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            container.html(`
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{{ __('messages.Poster') }}</th>
+                                <th>{{ __('messages.Title') }}</th>
+                                <th>{{ __('messages.Year') }}</th>
+                                <th>{{ __('messages.Type') }}</th>
+                                <th>{{ __('messages.Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="favorites-table">${rows}</tbody>
+                    </table>
+                </div>
+            `);
+        }
+
+        function removeFavorite(imdbID) {
+            const favorites = loadFavorites();
+            delete favorites[imdbID];
+            saveFavorites(favorites);
+            renderFavorites();
+
+            Swal.fire({
+                text: '{{ __('messages.favorite_removed') }}',
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
             });
         }
 
         $(document).ready(function() {
-            $('.favorite-btn').on('click', function() {
-                removeFavorite($(this));
+            renderFavorites();
+
+            $(document).on('click', '.favorite-btn', function() {
+                removeFavorite($(this).data('imdb'));
             });
         });
     </script>
